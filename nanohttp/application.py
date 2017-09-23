@@ -56,14 +56,8 @@ class Application:
             else:
                 result = self.__root__(*remaining_paths)
 
-            if result:
-                resp_generator = iter(result)
-                buffer = next(resp_generator)
-            else:
-                resp_generator = None
-
         except Exception as ex:
-            status, resp_generator = self._handle_exception(ex)
+            status, result = self._handle_exception(ex)
 
         self._hook('begin_response')
 
@@ -83,13 +77,13 @@ class Application:
 
         def _response():
             try:
-                if buffer is not None:
-                    yield ctx.encode_response(buffer)
-
-                if resp_generator:
-                    # noinspection PyTypeChecker
-                    for chunk in resp_generator:
-                        yield ctx.encode_response(chunk)
+                if result:
+                    if isinstance(result, str):
+                        yield result
+                    else:
+                        # noinspection PyTypeChecker
+                        for chunk in result:
+                            yield ctx.encode_response(chunk)
                 else:
                     yield b''
             except Exception as ex_:  # pragma: no cover
